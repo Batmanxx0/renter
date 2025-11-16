@@ -98,3 +98,16 @@ VALUES ('Your Address', 500000, 3, 2, 1800, 'Description', ARRAY['Tag1', 'Tag2']
 **Option 3: Local File (Fallback)**
 Edit `src/data/houseListings.js` to add listings (used when Supabase is not configured)
 
+## Deployment
+
+This app can be deployed to various free hosting platforms. See deployment options below.
+
+### Environment Variables
+
+Before deploying, make sure to set these environment variables in your hosting platform:
+
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key
+
+These should be set in your hosting platform's environment variables section (NOT in `.env` file for production).
+
