@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getResponsiveImageProps } from '../utils/responsiveImage'
+import { getHouseGallery } from '../data/houseListings'
 import './HouseDetailsModal.css'
 
 function HouseDetailsModal({ house, isOpen, onClose, onShare }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [house?.id])
+
   if (!isOpen || !house) return null
 
-  // Generate multiple images (using the same image for now, but structure supports multiple)
-  const images = [house.image, house.image, house.image] // In real app, this would be house.images array
+  const images = getHouseGallery(house)
 
   const handlePreviousImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
@@ -15,6 +20,20 @@ function HouseDetailsModal({ house, isOpen, onClose, onShare }) {
 
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+  }
+
+  const handleScheduleViewing = () => {
+    const subject = `Viewing Request: ${house.address}`
+    const body = [
+      `Hi, I'd like to schedule a viewing for:`,
+      ``,
+      `${house.address}`,
+      `$${house.price.toLocaleString()} — ${house.bedrooms} bed / ${house.bathrooms} bath, ${house.sqft.toLocaleString()} sqft`,
+      ``,
+      `Please let me know some available times. Thanks!`,
+    ].join('\n')
+
+    window.location.href = `mailto:info@houseswipe.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   // Generate Google Maps URL for the address
@@ -28,7 +47,10 @@ function HouseDetailsModal({ house, isOpen, onClose, onShare }) {
         {/* Image Gallery */}
         <div className="modal-image-section">
           <div className="image-container">
-            <img src={images[currentImageIndex]} alt={house.address} />
+            <img
+              {...getResponsiveImageProps(images[currentImageIndex], '(max-width: 767px) 92vw, 600px')}
+              alt={house.address}
+            />
             {images.length > 1 && (
               <>
                 <button className="image-nav prev" onClick={handlePreviousImage}>‹</button>
@@ -125,7 +147,7 @@ function HouseDetailsModal({ house, isOpen, onClose, onShare }) {
                 <span>House Swipe Realty</span>
               </div>
             </div>
-            <button className="contact-button">Schedule a Viewing</button>
+            <button className="contact-button" onClick={handleScheduleViewing}>Schedule a Viewing</button>
           </div>
 
           {/* Action Buttons */}

@@ -5,6 +5,7 @@ import FilterBar from './components/FilterBar'
 import Favorites from './components/Favorites'
 import HouseDetailsModal from './components/HouseDetailsModal'
 import Profile from './components/Profile'
+import Toast from './components/Toast'
 import { getCurrentUser, onAuthStateChange, signOut } from './services/authService'
 import './App.css'
 
@@ -16,6 +17,7 @@ function App() {
   const [passedHouses, setPassedHouses] = useState([])
   const [selectedHouse, setSelectedHouse] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState(null)
   const [filters, setFilters] = useState({
     maxPrice: null,
     minBedrooms: 0,
@@ -89,7 +91,7 @@ function App() {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-      alert('House details copied to clipboard!')
+      setToastMessage('House details copied to clipboard!')
     }
   }
 
@@ -146,7 +148,7 @@ function App() {
       </div>
 
       {activeTab === 'swipe' && (
-        <>
+        <div className="swipe-view">
           <FilterBar filters={filters} onFilterChange={setFilters} />
           <SwipeContainer 
             onSwipe={handleSwipe} 
@@ -164,7 +166,7 @@ function App() {
               <span className="stat-value">{passedHouses.length}</span>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === 'favorites' && (
@@ -172,6 +174,7 @@ function App() {
           userId={user.id} 
           onCardClick={handleCardClick}
           onShare={handleShareHouse}
+          onToast={setToastMessage}
         />
       )}
 
@@ -185,6 +188,8 @@ function App() {
         onClose={() => setIsModalOpen(false)}
         onShare={handleShareHouse}
       />
+
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
     </div>
   )
 }

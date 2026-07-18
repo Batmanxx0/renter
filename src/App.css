@@ -1,13 +1,25 @@
 .app {
   width: 100%;
-  max-width: 420px;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-md);
+}
+
+/* The swipe tab's own content (filters, card, stats) stays card-width
+   even on wide screens -- Favorites/Profile use the full .app width above. */
+.swipe-view {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
 }
 
 .app-header {
+  width: 100%;
   color: white;
   margin-bottom: 10px;
 }
@@ -140,6 +152,22 @@
   
   .stats {
     gap: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-header h1 {
+    font-size: 2.75rem;
+  }
+
+  .swipe-view {
+    max-width: 520px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .swipe-view {
+    max-width: 560px;
   }
 }
 

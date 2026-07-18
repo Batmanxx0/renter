@@ -3,7 +3,7 @@ import { getLikedHousesDetails, removeFromFavorites } from '../services/houseSer
 import HouseCard from './HouseCard'
 import './Favorites.css'
 
-function Favorites({ userId, onCardClick, onShare }) {
+function Favorites({ userId, onCardClick, onShare, onToast }) {
   const [favorites, setFavorites] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +33,7 @@ function Favorites({ userId, onCardClick, onShare }) {
       setFavorites(prev => prev.filter(house => house.id !== houseId))
     } catch (error) {
       console.error('Error removing favorite:', error)
-      alert('Failed to remove from favorites. Please try again.')
+      onToast?.('Failed to remove from favorites. Please try again.')
     }
   }
 
@@ -51,7 +51,7 @@ function Favorites({ userId, onCardClick, onShare }) {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(shareText)
-      alert('Favorites list copied to clipboard!')
+      onToast?.('Favorites list copied to clipboard!')
     }
   }
 

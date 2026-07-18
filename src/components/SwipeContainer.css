@@ -1,8 +1,21 @@
+.swipe-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
 .swipe-container {
   position: relative;
-  width: 100%;
-  max-width: 380px;
-  height: 600px;
+  width: min(100%, 400px);
+  /* Scales with the real visible viewport height (dvh), so it can never
+     be taller than what's actually on screen -- this is what was causing
+     cards to get clipped on phones with browser chrome eating vertical
+     space. Budget leaves room below for the like/pass/undo button row.
+     Lower bound keeps it usable on very short screens, upper bound keeps
+     it from becoming a giant card on tall displays. */
+  height: clamp(400px, 54dvh, 580px);
   margin: 0 auto;
 }
 
@@ -12,6 +25,89 @@
   height: 100%;
   top: 0;
   left: 0;
+}
+
+.card-wrapper-peek {
+  transform: scale(0.94) translateY(10px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.swipe-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.swipe-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.swipe-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.swipe-action-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.swipe-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.swipe-action-btn.pass-btn {
+  color: #f44336;
+}
+
+.swipe-action-btn.like-btn {
+  color: #4caf50;
+}
+
+.swipe-action-btn.undo-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  color: #667eea;
+  align-self: center;
+}
+
+.card-error-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  color: #666;
+}
+
+.card-error-skip {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .no-more-cards {
@@ -80,44 +176,49 @@
   }
 }
 
-.undo-button {
-  position: absolute;
-  top: -50px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid #667eea;
-  color: #667eea;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.3s;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.undo-button:hover {
-  background: #667eea;
-  color: white;
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
 @media (max-width: 480px) {
-  .swipe-container {
-    height: 550px;
-  }
-  
   .no-more-cards h2 {
     font-size: 1.5rem;
   }
-  
-  .undo-button {
-    top: -45px;
-    padding: 8px 16px;
-    font-size: 0.85rem;
+
+  .swipe-action-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+}
+
+/* Short viewports: landscape phones, small laptops with the window docked,
+   or a phone keyboard eating half the screen. Shrink the floor so the card
+   (and its action button row) stay fully visible without scrolling. */
+@media (max-height: 640px) {
+  .swipe-container {
+    height: clamp(340px, 68dvh, 460px);
+  }
+}
+
+@media (max-height: 640px) and (orientation: landscape) {
+  .swipe-container {
+    width: min(100%, 340px);
+    height: clamp(280px, 70dvh, 380px);
+  }
+
+  .swipe-actions {
+    gap: 14px;
+  }
+}
+
+@media (min-width: 768px) {
+  .swipe-container {
+    width: min(100%, 440px);
+    height: clamp(480px, 58dvh, 640px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .swipe-container {
+    width: min(100%, 460px);
+    height: clamp(520px, 60dvh, 680px);
   }
 }
 

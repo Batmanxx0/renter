@@ -1,7 +1,18 @@
+:root {
+  --space-sm: clamp(12px, 3vw, 16px);
+  --space-md: clamp(16px, 4vw, 24px);
+  --space-lg: clamp(20px, 5vw, 32px);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  /* Prevents iOS Safari from auto-zooming into inputs sized under 16px */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -12,6 +23,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  min-height: 100dvh; /* dvh accounts for mobile browser chrome; vh above is the fallback */
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
@@ -20,9 +32,16 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  align-items: flex-start;
+  padding: var(--space-md);
+}
+
+@media (min-width: 768px) {
+  #root {
+    padding: var(--space-lg);
+  }
 }
 

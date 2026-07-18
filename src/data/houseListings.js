@@ -276,3 +276,31 @@ export const houseListings = [
   }
 ]
 
+// Every listing here shares from the same pool of ~12 stock photos (that's
+// the nature of demo/placeholder data). getHouseGallery() uses that pool to
+// give each listing a real 3-photo gallery instead of repeating one image,
+// picked deterministically per listing so it doesn't change on every render.
+// Once listings have real per-property photos (e.g. an `images` array from
+// Supabase Storage), that will be used automatically and this pool is skipped.
+const PHOTO_POOL = [...new Set(houseListings.map((h) => h.image))]
+
+function photoId(url) {
+  return url?.match(/photo-\d+/)?.[0] ?? url
+}
+
+export function getHouseGallery(house) {
+  if (Array.isArray(house.images) && house.images.length > 0) {
+    return house.images
+  }
+
+  const heroId = photoId(house.image)
+  const others = PHOTO_POOL.filter((url) => photoId(url) !== heroId)
+  if (others.length === 0) return [house.image]
+
+  const seed = Number(house.id) || 0
+  const second = others[seed % others.length]
+  const third = others[(seed + 5) % others.length]
+
+  return [house.image, second, third]
+}
+
