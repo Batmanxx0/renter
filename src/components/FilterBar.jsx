@@ -1,121 +1,112 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import './FilterBar.css'
+
+const allTags = [
+  'Modern', 'Luxury', 'Family Friendly', 'Pool', 'Spacious', 'Starter Home',
+  'Charming', 'Estate', 'Views', 'Smart Home', 'Updated', 'Contemporary',
+]
 
 function FilterBar({ onFilterChange, filters }) {
   const [isOpen, setIsOpen] = useState(false)
+  const panelId = useId()
+  const hasActiveFilters = Boolean(
+    filters.maxPrice ||
+    filters.minBedrooms ||
+    filters.minBathrooms ||
+    filters.searchQuery ||
+    filters.selectedTags?.length
+  )
 
-  const handlePriceChange = (e) => {
-    onFilterChange({ ...filters, maxPrice: parseInt(e.target.value) })
-  }
-
-  const handleBedroomsChange = (e) => {
-    onFilterChange({ ...filters, minBedrooms: parseInt(e.target.value) || 0 })
-  }
-
-  const handleBathroomsChange = (e) => {
-    onFilterChange({ ...filters, minBathrooms: parseFloat(e.target.value) || 0 })
-  }
+  const updateFilters = (changes) => onFilterChange({ ...filters, ...changes })
 
   const handleTagToggle = (tag) => {
     const currentTags = filters.selectedTags || []
-    const newTags = currentTags.includes(tag)
-      ? currentTags.filter(t => t !== tag)
-      : [...currentTags, tag]
-    onFilterChange({ ...filters, selectedTags: newTags })
-  }
-
-  const clearFilters = () => {
-    onFilterChange({
-      maxPrice: null,
-      minBedrooms: 0,
-      minBathrooms: 0,
-      searchQuery: '',
-      selectedTags: []
+    updateFilters({
+      selectedTags: currentTags.includes(tag)
+        ? currentTags.filter((currentTag) => currentTag !== tag)
+        : [...currentTags, tag],
     })
   }
 
-  // Common tags from house listings
-  const allTags = ['Modern', 'Luxury', 'Family Friendly', 'Pool', 'Spacious', 'Starter Home', 'Charming', 'Estate', 'Views', 'Smart Home', 'Updated', 'Contemporary']
-
-  const hasActiveFilters = filters.maxPrice || filters.minBedrooms || filters.minBathrooms || filters.searchQuery || (filters.selectedTags && filters.selectedTags.length > 0)
-
   return (
-    <div className="filter-bar">
-      <button 
-        className={`filter-toggle ${isOpen ? 'active' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        🔍 Filters {hasActiveFilters && <span className="filter-badge">●</span>}
-      </button>
+    <section className="filter-bar" aria-label="Listing filters">
+      <div className="filter-toolbar">
+        <label className="search-field" htmlFor="address-search">
+          <span>Search an address</span>
+          <input
+            id="address-search"
+            type="search"
+            placeholder="Neighborhood, street, or city"
+            value={filters.searchQuery}
+            onChange={(event) => updateFilters({ searchQuery: event.target.value })}
+          />
+        </label>
+
+        <button
+          className={isOpen ? 'filter-toggle active' : 'filter-toggle'}
+          type="button"
+          aria-controls={panelId}
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          Filters{hasActiveFilters ? ' · Active' : ''}
+        </button>
+      </div>
 
       {isOpen && (
-        <div className="filter-panel">
-          <div className="filter-group">
-            <label>Max Price: ${filters.maxPrice?.toLocaleString() || 'No limit'}</label>
-            <input
-              type="range"
-              min="100000"
-              max="2000000"
-              step="50000"
-              value={filters.maxPrice || 2000000}
-              onChange={handlePriceChange}
-              className="slider"
-            />
-            <div className="slider-labels">
-              <span>$100K</span>
-              <span>$2M</span>
-            </div>
+        <div id={panelId} className="filter-panel">
+          <div className="filter-grid">
+            <label className="filter-group" htmlFor="max-price">
+              <span>Maximum price</span>
+              <strong>{filters.maxPrice ? `$${filters.maxPrice.toLocaleString()}` : 'No limit'}</strong>
+              <input
+                id="max-price"
+                type="range"
+                min="100000"
+                max="2000000"
+                step="50000"
+                value={filters.maxPrice || 2000000}
+                onChange={(event) => updateFilters({
+                  maxPrice: Number(event.target.value) === 2000000 ? null : Number(event.target.value),
+                })}
+              />
+              <small>$100K — $2M+</small>
+            </label>
+
+            <label className="filter-group" htmlFor="min-bedrooms">
+              <span>Minimum bedrooms</span>
+              <select
+                id="min-bedrooms"
+                value={filters.minBedrooms}
+                onChange={(event) => updateFilters({ minBedrooms: Number(event.target.value) })}
+              >
+                <option value="0">Any</option>
+                {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}+</option>)}
+              </select>
+            </label>
+
+            <label className="filter-group" htmlFor="min-bathrooms">
+              <span>Minimum bathrooms</span>
+              <select
+                id="min-bathrooms"
+                value={filters.minBathrooms}
+                onChange={(event) => updateFilters({ minBathrooms: Number(event.target.value) })}
+              >
+                <option value="0">Any</option>
+                {[1, 1.5, 2, 2.5, 3, 4].map((value) => <option key={value} value={value}>{value}+</option>)}
+              </select>
+            </label>
           </div>
 
-          <div className="filter-group">
-            <label>Min Bedrooms</label>
-            <select 
-              value={filters.minBedrooms || 0} 
-              onChange={handleBedroomsChange}
-            >
-              <option value={0}>Any</option>
-              <option value={1}>1+</option>
-              <option value={2}>2+</option>
-              <option value={3}>3+</option>
-              <option value={4}>4+</option>
-              <option value={5}>5+</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Min Bathrooms</label>
-            <select 
-              value={filters.minBathrooms || 0} 
-              onChange={handleBathroomsChange}
-            >
-              <option value={0}>Any</option>
-              <option value={1}>1+</option>
-              <option value={1.5}>1.5+</option>
-              <option value={2}>2+</option>
-              <option value={2.5}>2.5+</option>
-              <option value={3}>3+</option>
-              <option value={4}>4+</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Search Address</label>
-            <input
-              type="text"
-              placeholder="Search by address..."
-              value={filters.searchQuery || ''}
-              onChange={(e) => onFilterChange({ ...filters, searchQuery: e.target.value })}
-              className="search-input"
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Tags</label>
+          <div className="tag-filter-group">
+            <span className="filter-label">What matters to you?</span>
             <div className="tags-filter">
-              {allTags.map(tag => (
+              {allTags.map((tag) => (
                 <button
                   key={tag}
-                  className={`tag-filter-button ${(filters.selectedTags || []).includes(tag) ? 'active' : ''}`}
+                  className={filters.selectedTags.includes(tag) ? 'tag-filter-button active' : 'tag-filter-button'}
+                  type="button"
+                  aria-pressed={filters.selectedTags.includes(tag)}
                   onClick={() => handleTagToggle(tag)}
                 >
                   {tag}
@@ -125,15 +116,24 @@ function FilterBar({ onFilterChange, filters }) {
           </div>
 
           {hasActiveFilters && (
-            <button onClick={clearFilters} className="clear-filters">
-              Clear All Filters
+            <button
+              className="clear-filters"
+              type="button"
+              onClick={() => onFilterChange({
+                maxPrice: null,
+                minBedrooms: 0,
+                minBathrooms: 0,
+                searchQuery: '',
+                selectedTags: [],
+              })}
+            >
+              Clear filters
             </button>
           )}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
 export default FilterBar
-

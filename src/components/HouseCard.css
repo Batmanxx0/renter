@@ -1,199 +1,203 @@
 .house-card {
   width: 100%;
   height: 100%;
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  cursor: grab;
-  user-select: none;
-  position: relative;
   display: flex;
   flex-direction: column;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--paper);
+  box-shadow: 0 18px 50px rgba(42, 73, 63, .11);
+  color: var(--ink);
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .house-card.active {
-  cursor: grabbing;
+  cursor: grab;
+  touch-action: none;
 }
 
 .house-card.dragging {
-  cursor: grabbing;
-  will-change: transform;
-}
-
-.house-card:active {
   cursor: grabbing;
 }
 
 .card-image {
   position: relative;
-  width: 100%;
-  height: 60%;
+  height: 48%;
+  min-height: 250px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: var(--blue);
 }
 
 .card-image img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
-  transform: translateZ(0);
-  will-change: transform;
 }
 
-.price-badge {
+.listing-price {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #667eea;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.card-content {
-  padding: 20px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-}
-
-.card-address {
-  font-size: 1.4rem;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.card-details {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #666;
-  font-size: 0.95rem;
-}
-
-.detail-icon {
-  font-size: 1.1rem;
-}
-
-.card-description {
-  color: #555;
-  line-height: 1.5;
-  font-size: 0.9rem;
-  flex: 1;
-}
-
-.card-tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: auto;
-}
-
-.tag {
-  background: #f0f0f0;
-  padding: 5px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  color: #667eea;
-  font-weight: 500;
-}
-
-.view-details-button {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px;
+  top: 16px;
+  left: 16px;
+  padding: 8px 11px;
   border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 15px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 800;
 }
 
-.view-details-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.view-details-button:active {
-  transform: translateY(0);
-}
-
-.overlay {
+.swipe-overlay {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate3d(-50%, -50%, 0);
-  font-size: 3rem;
-  font-weight: bold;
-  z-index: 10;
-  pointer-events: none;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  border: 4px solid;
-  padding: 20px 40px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.9);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
+  padding: 11px 20px;
+  border: 3px solid currentColor;
+  border-radius: 12px;
+  background: rgba(255, 254, 250, .94);
+  font-size: 1.45rem;
+  font-weight: 850;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%) rotate(-6deg);
 }
 
-.like-overlay {
-  color: #4caf50;
-  border-color: #4caf50;
-  animation: pulse 0.3s ease-out;
+.swipe-overlay.saved {
+  color: var(--mint-strong);
 }
 
-.pass-overlay {
-  color: #f44336;
-  border-color: #f44336;
-  animation: pulse 0.3s ease-out;
+.swipe-overlay.passed {
+  color: var(--danger);
+  transform: translate(-50%, -50%) rotate(6deg);
 }
 
-@keyframes pulse {
-  0% {
-    transform: translate3d(-50%, -50%, 0) scale(0.8);
-    opacity: 0;
+.card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px;
+}
+
+.listing-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.listing-kicker {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: .71rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.card-address {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.card-details,
+.modal-specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+  padding: 0;
+}
+
+.card-details div,
+.modal-specs div {
+  min-width: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.card-details dt,
+.modal-specs dt {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.card-details dd,
+.modal-specs dd {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: .91rem;
+  font-weight: 700;
+}
+
+.card-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: .92rem;
+  line-height: 1.6;
+}
+
+.card-tags,
+.modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.tag {
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: var(--mint);
+  color: #315d4d;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.tag:nth-child(2n) {
+  background: var(--blue);
+  color: var(--blue-strong);
+}
+
+.tag:nth-child(3n) {
+  background: var(--peach);
+  color: #97543f;
+}
+
+.details-button {
+  width: fit-content;
+  margin-top: auto;
+  padding: 13px 0 3px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--ink);
+  font-size: .88rem;
+  font-weight: 750;
+}
+
+.details-button:hover {
+  color: var(--mint-strong);
+}
+
+@media (max-width: 580px) {
+  .card-image {
+    min-height: 210px;
   }
-  50% {
-    transform: translate3d(-50%, -50%, 0) scale(1.1);
-  }
-  100% {
-    transform: translate3d(-50%, -50%, 0) scale(1);
-    opacity: 1;
-  }
-}
 
-@media (max-width: 480px) {
   .card-content {
-    padding: 15px;
+    padding: 18px;
   }
-  
-  .card-address {
-    font-size: 1.2rem;
-  }
-  
-  .overlay {
-    font-size: 2rem;
-    padding: 15px 30px;
+
+  .card-details,
+  .modal-specs {
+    gap: 6px;
   }
 }
-

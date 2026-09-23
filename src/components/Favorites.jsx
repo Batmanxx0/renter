@@ -1,120 +1,99 @@
-import { useState, useEffect } from 'react'
-import { getLikedHousesDetails, removeFromFavorites } from '../services/houseService'
+import { useEffect, useState } from 'react'
 import HouseCard from './HouseCard'
+import { getLikedHousesDetails, removeFromFavorites } from '../services/houseService'
 import './Favorites.css'
 
-function Favorites({ userId, onCardClick, onShare }) {
+function Favorites({ onBrowse, onCardClick, onFavoriteRemoved, onShareFavorites, userId }) {
   const [favorites, setFavorites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [removingId, setRemovingId] = useState(null)
 
   useEffect(() => {
-    if (userId) {
-      loadFavorites()
-    } else {
-      setLoading(false)
+    let active = true
+    getLikedHousesDetails(userId)
+      .then((listings) => {
+        if (active) setFavorites(listings)
+      })
+      .catch((loadError) => {
+        if (active) setError(loadError.message || 'We could not load your saved listings.')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
     }
   }, [userId])
 
-  const loadFavorites = async () => {
-    try {
-      setLoading(true)
-      const data = await getLikedHousesDetails(userId)
-      setFavorites(data)
-    } catch (error) {
-      console.error('Error loading favorites:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleRemove = async (houseId) => {
+    setRemovingId(houseId)
+    setError(null)
 
-  const handleRemoveFavorite = async (houseId) => {
     try {
       await removeFromFavorites(houseId, userId)
-      setFavorites(prev => prev.filter(house => house.id !== houseId))
-    } catch (error) {
-      console.error('Error removing favorite:', error)
-      alert('Failed to remove from favorites. Please try again.')
+      setFavorites((current) => current.filter((house) => house.id !== houseId))
+      onFavoriteRemoved(houseId)
+    } catch (removeError) {
+      setError(removeError.message || 'We could not remove this saved listing. Please try again.')
+    } finally {
+      setRemovingId(null)
     }
-  }
-
-  const handleShareFavorites = () => {
-    if (favorites.length === 0) return
-    
-    const favoritesList = favorites.map(h => `${h.address} - $${h.price.toLocaleString()}`).join('\n')
-    const shareText = `My Favorite Houses from House Swipe:\n\n${favoritesList}\n\nCheck them out!`
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'My Favorite Houses',
-        text: shareText
-      }).catch(err => console.log('Error sharing:', err))
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareText)
-      alert('Favorites list copied to clipboard!')
-    }
-  }
-
-  if (!userId) {
-    return (
-      <div className="favorites-container">
-        <div className="favorites-empty">
-          <h2>🔒 Sign in to view your favorites</h2>
-          <p>Create an account to save and view your liked houses</p>
-        </div>
-      </div>
-    )
   }
 
   if (loading) {
     return (
-      <div className="favorites-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading your favorites...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (favorites.length === 0) {
-    return (
-      <div className="favorites-container">
-        <div className="favorites-empty">
-          <h2>❤️ No favorites yet</h2>
-          <p>Start swiping to save houses you like!</p>
-        </div>
-      </div>
+      <section className="saved-page loading-saved" aria-live="polite">
+        <div className="loading-mark" aria-hidden="true" />
+        <p>Loading your saved places</p>
+      </section>
     )
   }
 
   return (
-    <div className="favorites-container">
-      <div className="favorites-header">
-        <h2 className="favorites-title">Your Favorites ({favorites.length})</h2>
+    <section className="saved-page" aria-labelledby="saved-title">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">Your shortlist</p>
+          <h1 id="saved-title">Saved listings</h1>
+          <p>Everything you want to return to, in one considered list.</p>
+        </div>
         {favorites.length > 0 && (
-          <button className="share-favorites-button" onClick={handleShareFavorites}>
-            📤 Share All
+          <button className="secondary-button" type="button" onClick={() => onShareFavorites(favorites)}>
+            Share shortlist
           </button>
         )}
-      </div>
-      <div className="favorites-grid">
-        {favorites.map((house) => (
-          <div key={house.id} className="favorite-card-wrapper">
-            <HouseCard house={house} isActive={false} onCardClick={onCardClick} />
-            <button 
-              className="remove-favorite-button"
-              onClick={() => handleRemoveFavorite(house.id)}
-              title="Remove from favorites"
-            >
-              ❌ Remove
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+      </header>
+
+      {error && <p className="inline-error" role="alert">{error}</p>}
+
+      {favorites.length === 0 ? (
+        <div className="empty-panel">
+          <p className="eyebrow">Nothing saved yet</p>
+          <h2>Your shortlist starts with one good match.</h2>
+          <p>Browse available homes and save the listings you want to revisit.</p>
+          <button className="primary-button" type="button" onClick={onBrowse}>Browse listings</button>
+        </div>
+      ) : (
+        <div className="favorites-grid">
+          {favorites.map((house) => (
+            <div key={house.id} className="favorite-card-wrapper">
+              <HouseCard house={house} onCardClick={onCardClick} />
+              <button
+                className="remove-favorite-button"
+                type="button"
+                disabled={removingId === house.id}
+                onClick={() => handleRemove(house.id)}
+              >
+                {removingId === house.id ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
 export default Favorites
-

@@ -7,96 +7,96 @@ function Auth({ onAuthSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [message, setMessage] = useState(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     setLoading(true)
-    setError(null)
+    setMessage(null)
 
     try {
       if (isSignUp) {
-        await signUp(email, password)
-        setError('Check your email to verify your account!')
+        const result = await signUp(email, password)
+        if (result.session) onAuthSuccess()
+        setMessage({ tone: 'success', text: 'Check your inbox to confirm your email, then return to sign in.' })
       } else {
         await signIn(email, password)
         onAuthSuccess()
       }
-    } catch (err) {
-      setError(err.message || 'An error occurred')
+    } catch (error) {
+      setMessage({ tone: 'error', text: error.message || 'We could not continue. Please try again.' })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>{isSignUp ? 'Sign Up' : 'Sign In'}</h2>
-        <p className="auth-subtitle">
-          {isSignUp 
-            ? 'Create an account to save your favorites' 
-            : 'Sign in to access your saved favorites'}
-        </p>
+    <main className="auth-page">
+      <section className="auth-intro" aria-labelledby="auth-brand">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">R</span>
+          <span id="auth-brand">Renter</span>
+        </div>
+        <p className="eyebrow">A calmer way to search</p>
+        <h1>Keep the places that feel right.</h1>
+        <p>Discover homes at your pace, save the ones worth revisiting, and make the next move with confidence.</p>
+      </section>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+      <section className="auth-card" aria-labelledby="auth-title">
+        <p className="eyebrow">Your account</p>
+        <h2 id="auth-title">{isSignUp ? 'Create your account' : 'Welcome back'}</h2>
+        <p className="auth-subtitle">{isSignUp ? 'Save decisions across every device.' : 'Pick up your home search where you left off.'}</p>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="form-group" htmlFor="email">
+            <span>Email address</span>
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              placeholder="your@email.com"
             />
-          </div>
+          </label>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <label className="form-group" htmlFor="password">
+            <span>Password</span>
             <input
               id="password"
               type="password"
+              autoComplete={isSignUp ? 'new-password' : 'current-password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength="8"
               required
-              placeholder="••••••••"
-              minLength={6}
             />
-          </div>
+            {isSignUp && <small>Use at least 8 characters.</small>}
+          </label>
 
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
+          {message && <p className={`auth-message ${message.tone}`} role="status">{message.text}</p>}
 
-          <button 
-            type="submit" 
-            className="auth-button"
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+          <button className="primary-button auth-button" type="submit" disabled={loading}>
+            {loading ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'}
           </button>
         </form>
 
-        <div className="auth-switch">
-          <p>
-            {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
-            <button 
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError(null)
-              }}
-              className="link-button"
-            >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
-            </button>
-          </p>
-        </div>
-      </div>
-    </div>
+        <p className="auth-switch">
+          {isSignUp ? 'Already have an account?' : 'New to Renter?'}{' '}
+          <button
+            className="inline-button"
+            type="button"
+            onClick={() => {
+              setIsSignUp((current) => !current)
+              setMessage(null)
+            }}
+          >
+            {isSignUp ? 'Sign in' : 'Create one'}
+          </button>
+        </p>
+      </section>
+    </main>
   )
 }
 
 export default Auth
-

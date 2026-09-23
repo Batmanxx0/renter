@@ -1,28 +1,16 @@
--- Updated Schema for Authentication and User Profiles
--- Run this AFTER the initial schema if you already have tables
-
--- Update user_swipes table to use UUID for user_id (matches Supabase Auth)
-ALTER TABLE user_swipes 
-  ALTER COLUMN user_id TYPE UUID USING user_id::UUID;
-
--- Update RLS policies for user_swipes with proper authentication
-DROP POLICY IF EXISTS "Users can read their own swipes" ON user_swipes;
-DROP POLICY IF EXISTS "Anyone can insert swipes" ON user_swipes;
-
--- New policies with proper authentication
-CREATE POLICY "Users can insert their own swipes"
-  ON user_swipes
-  FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
-
-CREATE POLICY "Users can read their own swipes"
-  ON user_swipes
-  FOR SELECT
-  USING (auth.uid() = user_id OR user_id IS NULL);
-
--- Enable real-time for house_listings (for live updates)
-ALTER PUBLICATION supabase_realtime ADD TABLE house_listings;
-
--- Create index for better performance on user_id lookups
-CREATE INDEX IF NOT EXISTS idx_user_swipes_user_id_auth ON user_swipes(user_id) WHERE user_id IS NOT NULL;
-
+-- Legacy database migration guide
+--
+-- Do not run this file blindly against a live database. The old schema allowed
+-- nullable/text user IDs and duplicate swipe rows, so a safe migration depends
+-- on the data already stored in your project. Back up user_swipes, audit invalid
+-- or duplicate records, then use supabase-schema.sql as the target definition.
+--
+-- Required outcomes before deploying the app:
+--   1. user_swipes.user_id is UUID NOT NULL and references auth.users(id)
+--   2. one row exists at most for each (user_id, house_id)
+--   3. the only user_swipes RLS policy is ownership-based FOR ALL
+--   4. all nullable or invalid legacy rows are resolved intentionally
+--
+-- This guide is deliberately non-executable to avoid deleting or silently
+-- reassigning production data. Create and review a project-specific migration
+-- before changing an existing database.

@@ -1,131 +1,78 @@
-.favorites-container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+.saved-page {
+  min-height: 430px;
 }
 
-.favorites-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.favorites-title {
-  color: white;
-  font-size: 2rem;
-  margin: 0;
-}
-
-.share-favorites-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid white;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.share-favorites-button:hover {
-  background: white;
-  color: #667eea;
+.loading-saved {
+  display: grid;
+  place-content: center;
+  gap: 16px;
+  color: var(--muted);
+  text-align: center;
 }
 
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  padding-bottom: 40px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .favorite-card-wrapper {
-  height: 500px;
   position: relative;
+  min-height: 575px;
+}
+
+.favorite-card-wrapper .house-card {
+  min-height: 575px;
 }
 
 .remove-favorite-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(244, 67, 54, 0.9);
-  border: none;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.3s;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  top: 14px;
+  right: 14px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #efc9bb;
+  border-radius: 10px;
+  background: var(--peach);
+  color: var(--danger);
+  font-size: .77rem;
+  font-weight: 750;
 }
 
-.remove-favorite-button:hover {
-  background: rgba(244, 67, 54, 1);
-  transform: scale(1.05);
+.remove-favorite-button:hover:not(:disabled) {
+  background: #fff0ee;
 }
 
-.favorites-empty {
-  background: white;
-  border-radius: 20px;
-  padding: 60px 40px;
-  text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+.empty-panel {
+  max-width: 620px;
+  padding: 42px;
+  border: 1px solid #ded5ef;
+  border-radius: 24px;
+  background: var(--lavender);
 }
 
-.favorites-empty h2 {
+.empty-panel h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 2rem;
-  color: #667eea;
-  margin-bottom: 15px;
+  font-weight: 500;
 }
 
-.favorites-empty p {
-  color: #666;
-  font-size: 1.1rem;
+.empty-panel p:not(.eyebrow) {
+  max-width: 430px;
+  margin: 13px 0 22px;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  color: white;
-  gap: 20px;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 760px) {
   .favorites-grid {
     grid-template-columns: 1fr;
   }
-  
-  .favorite-card-wrapper {
-    height: 600px;
-  }
-  
-  .favorites-title {
-    font-size: 1.5rem;
+
+  .favorite-card-wrapper,
+  .favorite-card-wrapper .house-card {
+    min-height: 540px;
   }
 }
-

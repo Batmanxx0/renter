@@ -1,193 +1,263 @@
-import { useState, useEffect } from 'react'
-import SwipeContainer from './components/SwipeContainer'
+import { useEffect, useMemo, useState } from 'react'
 import Auth from './components/Auth'
-import FilterBar from './components/FilterBar'
 import Favorites from './components/Favorites'
+import FilterBar from './components/FilterBar'
 import HouseDetailsModal from './components/HouseDetailsModal'
 import Profile from './components/Profile'
+import SwipeContainer from './components/SwipeContainer'
+import { isDemoMode, isSupabaseConfigured } from './lib/supabase'
+import {
+  countSwipeActions,
+  removeSwipeFromState,
+  saveSwipeToState,
+  toSwipeMap,
+} from './lib/swipeState'
 import { getCurrentUser, onAuthStateChange, signOut } from './services/authService'
+import { getUserSwipeActions } from './services/houseService'
 import './App.css'
 
+const initialFilters = {
+  maxPrice: null,
+  minBedrooms: 0,
+  minBathrooms: 0,
+  searchQuery: '',
+  selectedTags: [],
+}
+
 function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('swipe') // 'swipe', 'favorites', or 'profile'
-  const [likedHouses, setLikedHouses] = useState([])
-  const [passedHouses, setPassedHouses] = useState([])
+  const [user, setUser] = useState(isDemoMode ? { id: 'preview-user', email: 'preview@renter.local' } : null)
+  const [loading, setLoading] = useState(isSupabaseConfigured && !isDemoMode)
+  const [activeTab, setActiveTab] = useState('discover')
+  const [swipeActions, setSwipeActions] = useState({})
   const [selectedHouse, setSelectedHouse] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [filters, setFilters] = useState({
-    maxPrice: null,
-    minBedrooms: 0,
-    minBathrooms: 0,
-    searchQuery: '',
-    selectedTags: []
-  })
+  const [filters, setFilters] = useState(initialFilters)
+  const [notice, setNotice] = useState(null)
 
   useEffect(() => {
-    // Check for existing session
-    getCurrentUser().then(setUser).finally(() => setLoading(false))
+    if (isDemoMode) return undefined
+    if (!isSupabaseConfigured) return undefined
 
-    // Listen for auth changes
-    const { data: { subscription } } = onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
+    let active = true
+
+    getCurrentUser()
+      .then((currentUser) => {
+        if (active) setUser(currentUser)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    const { data: { subscription } } = onAuthStateChange((_, session) => {
+      if (active) {
+        setUser(session?.user ?? null)
+        if (!session?.user) setSwipeActions({})
+      }
     })
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe()
-      }
+      active = false
+      subscription.unsubscribe()
     }
   }, [])
 
-  const handleAuthSuccess = () => {
-    getCurrentUser().then(setUser)
-  }
+  useEffect(() => {
+    if (!user) return undefined
+
+    let active = true
+
+    getUserSwipeActions(user.id)
+      .then((swipes) => {
+        if (active) setSwipeActions(toSwipeMap(swipes))
+      })
+      .catch(() => {
+        if (active) setNotice({ tone: 'error', text: 'We could not load your saved decisions. Please refresh and try again.' })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!notice) return undefined
+
+    const timer = window.setTimeout(() => setNotice(null), 4500)
+    return () => window.clearTimeout(timer)
+  }, [notice])
+
+  const swipeStats = useMemo(() => countSwipeActions(swipeActions), [swipeActions])
+  const swipedHouseIds = useMemo(() => Object.keys(swipeActions), [swipeActions])
 
   const handleSignOut = async () => {
+    if (isDemoMode) {
+      setNotice({ tone: 'success', text: 'Demo mode keeps the preview account active.' })
+      return
+    }
+
     try {
       await signOut()
-      setUser(null)
-      setActiveTab('swipe')
+      setActiveTab('discover')
+      setNotice({ tone: 'success', text: 'You have been signed out.' })
     } catch (error) {
-      console.error('Error signing out:', error)
+      setNotice({ tone: 'error', text: error.message || 'We could not sign you out. Please try again.' })
     }
   }
 
-  const handleSwipe = (houseId, direction, isUndo = false) => {
-    if (isUndo) {
-      // Handle undo - remove from the appropriate list
-      if (direction === 'left') {
-        setLikedHouses(prev => prev.filter(id => id !== houseId))
+  const handleShareHouse = async (house) => {
+    const text = `${house.address} — $${house.price.toLocaleString()}\n${house.description}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: house.address, text, url: window.location.origin })
       } else {
-        setPassedHouses(prev => prev.filter(id => id !== houseId))
+        await navigator.clipboard.writeText(`${text}\n${window.location.origin}`)
+        setNotice({ tone: 'success', text: 'Listing details copied to your clipboard.' })
       }
-    } else {
-      if (direction === 'right') {
-        setLikedHouses(prev => [...prev, houseId])
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setNotice({ tone: 'error', text: 'We could not share this listing. Please try again.' })
+      }
+    }
+  }
+
+  const handleShareFavorites = async (favorites) => {
+    const text = favorites.map((house) => `${house.address} — $${Number(house.price).toLocaleString()}`).join('\n')
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'My Renter shortlist', text })
       } else {
-        setPassedHouses(prev => [...prev, houseId])
+        await navigator.clipboard.writeText(text)
+        setNotice({ tone: 'success', text: 'Your shortlist was copied to the clipboard.' })
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setNotice({ tone: 'error', text: 'We could not share your shortlist. Please try again.' })
       }
     }
   }
 
-  const handleCardClick = (house) => {
-    setSelectedHouse(house)
-    setIsModalOpen(true)
-  }
-
-  const handleShareHouse = (house) => {
-    const shareText = `Check out this house: ${house.address} - $${house.price.toLocaleString()}\n${house.description}\n\nView on House Swipe!`
-    const shareUrl = window.location.origin
-
-    if (navigator.share) {
-      navigator.share({
-        title: `${house.address} - House Swipe`,
-        text: shareText,
-        url: shareUrl
-      }).catch(err => console.log('Error sharing:', err))
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-      alert('House details copied to clipboard!')
-    }
+  if (!isSupabaseConfigured && !isDemoMode) {
+    return (
+      <main className="configuration-page">
+        <section className="configuration-card" aria-labelledby="configuration-title">
+          <p className="eyebrow">Renter setup</p>
+          <h1 id="configuration-title">Connect your secure data source</h1>
+          <p>
+            Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to a local
+            <code> .env </code> file, then apply the reviewed production schema before running the app.
+          </p>
+        </section>
+      </main>
+    )
   }
 
   if (loading) {
     return (
-      <div className="app">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-        </div>
-      </div>
+      <main className="loading-page" aria-label="Loading Renter">
+        <div className="loading-mark" aria-hidden="true" />
+        <p>Preparing your home search</p>
+      </main>
     )
   }
 
   if (!user) {
-    return <Auth onAuthSuccess={handleAuthSuccess} />
+    return <Auth onAuthSuccess={() => setNotice({ tone: 'success', text: 'Welcome to Renter.' })} />
   }
 
   return (
-    <div className="app">
+    <div className="app-shell">
       <header className="app-header">
-        <div className="header-content">
-          <div>
-            <h1>🏠 House Swipe</h1>
-            <p>Swipe to find your dream home</p>
-          </div>
-          <div className="user-info">
-            <span className="user-email">{user.email}</span>
-            <button onClick={handleSignOut} className="sign-out-button">
-              Sign Out
+        <button className="brand" type="button" onClick={() => setActiveTab('discover')}>
+          <span className="brand-mark" aria-hidden="true">R</span>
+          <span>Renter</span>
+        </button>
+
+        <nav className="primary-nav" aria-label="Main navigation">
+          {[
+            ['discover', 'Discover'],
+            ['favorites', `Saved (${swipeStats.liked})`],
+            ['profile', 'Profile'],
+          ].map(([tab, label]) => (
+            <button
+              key={tab}
+              className={activeTab === tab ? 'nav-link active' : 'nav-link'}
+              type="button"
+              aria-current={activeTab === tab ? 'page' : undefined}
+              onClick={() => setActiveTab(tab)}
+            >
+              {label}
             </button>
-          </div>
+          ))}
+        </nav>
+
+        <div className="account-menu">
+          <span className="account-email" title={user.email}>{user.email}</span>
+          <button className="text-button" type="button" onClick={handleSignOut}>Sign out</button>
         </div>
       </header>
 
-      <div className="tabs">
-        <button 
-          className={`tab ${activeTab === 'swipe' ? 'active' : ''}`}
-          onClick={() => setActiveTab('swipe')}
-        >
-          🔄 Swipe
-        </button>
-        <button 
-          className={`tab ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => setActiveTab('favorites')}
-        >
-          ❤️ Favorites ({likedHouses.length})
-        </button>
-        <button 
-          className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
-        >
-          👤 Profile
-        </button>
-      </div>
+      <main className="app-main">
+        {activeTab === 'discover' && (
+          <>
+            <section className="discover-intro" aria-labelledby="discover-title">
+              <div>
+                <p className="eyebrow">Curated for your next move</p>
+                <h1 id="discover-title">Find a home that feels like yours.</h1>
+                <p className="intro-copy">Set your priorities, explore each listing, and save the places worth another look.</p>
+              </div>
+              <dl className="decision-summary" aria-label="Your search activity">
+                <div>
+                  <dt>Saved</dt>
+                  <dd>{swipeStats.liked}</dd>
+                </div>
+                <div>
+                  <dt>Passed</dt>
+                  <dd>{swipeStats.passed}</dd>
+                </div>
+              </dl>
+            </section>
 
-      {activeTab === 'swipe' && (
-        <>
-          <FilterBar filters={filters} onFilterChange={setFilters} />
-          <SwipeContainer 
-            onSwipe={handleSwipe} 
-            filters={filters}
+            <FilterBar filters={filters} onFilterChange={setFilters} />
+            <SwipeContainer
+              filters={filters}
+              userId={user.id}
+              swipedHouseIds={swipedHouseIds}
+              onCardClick={setSelectedHouse}
+              onSwipeSaved={(houseId, action) => setSwipeActions((current) => saveSwipeToState(current, houseId, action))}
+              onSwipeRemoved={(houseId) => setSwipeActions((current) => removeSwipeFromState(current, houseId))}
+            />
+          </>
+        )}
+
+        {activeTab === 'favorites' && (
+          <Favorites
+            key={user.id}
             userId={user.id}
-            onCardClick={handleCardClick}
+            onCardClick={setSelectedHouse}
+            onShareFavorites={handleShareFavorites}
+            onBrowse={() => setActiveTab('discover')}
+            onFavoriteRemoved={(houseId) => setSwipeActions((current) => removeSwipeFromState(current, houseId))}
           />
-          <div className="stats">
-            <div className="stat-item">
-              <span className="stat-label">Liked:</span>
-              <span className="stat-value">{likedHouses.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Passed:</span>
-              <span className="stat-value">{passedHouses.length}</span>
-            </div>
-          </div>
-        </>
-      )}
+        )}
 
-      {activeTab === 'favorites' && (
-        <Favorites 
-          userId={user.id} 
-          onCardClick={handleCardClick}
-          onShare={handleShareHouse}
-        />
-      )}
-
-      {activeTab === 'profile' && (
-        <Profile userId={user.id} />
-      )}
+        {activeTab === 'profile' && <Profile user={user} stats={swipeStats} />}
+      </main>
 
       <HouseDetailsModal
         house={selectedHouse}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={Boolean(selectedHouse)}
+        onClose={() => setSelectedHouse(null)}
         onShare={handleShareHouse}
       />
+
+      {notice && (
+        <div className={`toast toast-${notice.tone}`} role="status" aria-live="polite">
+          {notice.text}
+        </div>
+      )}
     </div>
   )
 }
 
 export default App
-

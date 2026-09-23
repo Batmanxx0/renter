@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { getSupabaseClient } from '../lib/supabase'
 
 /**
  * Sign up a new user
@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
  */
 export const signUp = async (email, password) => {
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await getSupabaseClient().auth.signUp({
       email,
       password,
     })
@@ -29,7 +29,7 @@ export const signUp = async (email, password) => {
  */
 export const signIn = async (email, password) => {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await getSupabaseClient().auth.signInWithPassword({
       email,
       password,
     })
@@ -48,7 +48,7 @@ export const signIn = async (email, password) => {
  */
 export const signOut = async () => {
   try {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await getSupabaseClient().auth.signOut()
     if (error) throw error
   } catch (error) {
     console.error('Error signing out:', error)
@@ -62,7 +62,7 @@ export const signOut = async () => {
  */
 export const getCurrentUser = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await getSupabaseClient().auth.getUser()
     return user
   } catch (error) {
     console.error('Error getting current user:', error)
@@ -76,8 +76,7 @@ export const getCurrentUser = async () => {
  * @returns {Object} Object with data.subscription for unsubscribe
  */
 export const onAuthStateChange = (callback) => {
-  return supabase.auth.onAuthStateChange((event, session) => {
+  return getSupabaseClient().auth.onAuthStateChange((event, session) => {
     callback(event, session)
   })
 }
-

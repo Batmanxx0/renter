@@ -1,139 +1,47 @@
-import { useState, useEffect } from 'react'
-import { getCurrentUser } from '../services/authService'
-import { supabase } from '../lib/supabase'
 import './Profile.css'
 
-function Profile({ userId }) {
-  const [user, setUser] = useState(null)
-  const [stats, setStats] = useState({
-    totalLikes: 0,
-    totalPasses: 0,
-    totalSwipes: 0
-  })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (userId) {
-      loadProfileData()
-    } else {
-      setLoading(false)
-    }
-  }, [userId])
-
-  const loadProfileData = async () => {
-    try {
-      setLoading(true)
-      
-      // Get user info
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
-
-      // Get swipe stats
-      const { data: swipes, error } = await supabase
-        .from('user_swipes')
-        .select('action')
-        .eq('user_id', userId)
-
-      if (!error && swipes) {
-        const likes = swipes.filter(s => s.action === 'like').length
-        const passes = swipes.filter(s => s.action === 'pass').length
-        setStats({
-          totalLikes: likes,
-          totalPasses: passes,
-          totalSwipes: swipes.length
-        })
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (!userId) {
-    return (
-      <div className="profile-container">
-        <div className="profile-empty">
-          <h2>🔒 Sign in to view your profile</h2>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="profile-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading profile...</p>
-        </div>
-      </div>
-    )
-  }
+function Profile({ stats, user }) {
+  const firstInitial = user.email?.charAt(0).toUpperCase() || 'R'
+  const likeRate = stats.total ? Math.round((stats.liked / stats.total) * 100) : 0
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <div className="profile-header">
-          <div className="profile-avatar">
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </div>
-          <h2>Profile</h2>
+    <section className="profile-page" aria-labelledby="profile-title">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">Your account</p>
+          <h1 id="profile-title">Search with intention.</h1>
+          <p>Your saved decisions stay private to your Renter account.</p>
         </div>
+      </header>
 
-        <div className="profile-info">
-          <div className="info-item">
-            <span className="info-label">Email</span>
-            <span className="info-value">{user?.email || 'N/A'}</span>
+      <div className="profile-layout">
+        <section className="profile-card account-card">
+          <div className="profile-avatar" aria-hidden="true">{firstInitial}</div>
+          <div>
+            <p className="eyebrow">Signed in as</p>
+            <h2>{user.email}</h2>
+            <p className="profile-note">Your history syncs securely across your signed-in sessions.</p>
           </div>
-          <div className="info-item">
-            <span className="info-label">User ID</span>
-            <span className="info-value">{userId.substring(0, 8)}...</span>
-          </div>
-        </div>
+        </section>
 
-        <div className="profile-stats">
-          <h3>Your Statistics</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">❤️</div>
-              <div className="stat-number">{stats.totalLikes}</div>
-              <div className="stat-label">Liked</div>
+        <section className="profile-card activity-card" aria-labelledby="activity-title">
+          <div className="profile-card-heading">
+            <div>
+              <p className="eyebrow">Search activity</p>
+              <h2 id="activity-title">Your decisions</h2>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">👋</div>
-              <div className="stat-number">{stats.totalPasses}</div>
-              <div className="stat-label">Passed</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-number">{stats.totalSwipes}</div>
-              <div className="stat-label">Total Swipes</div>
-            </div>
+            <span className="activity-total">{stats.total} total</span>
           </div>
-        </div>
 
-        {stats.totalSwipes > 0 && (
-          <div className="profile-insights">
-            <h3>Insights</h3>
-            <div className="insight-item">
-              <span>Like Rate:</span>
-              <span className="insight-value">
-                {((stats.totalLikes / stats.totalSwipes) * 100).toFixed(1)}%
-              </span>
-            </div>
-            <div className="insight-item">
-              <span>Most Active:</span>
-              <span className="insight-value">
-                {stats.totalLikes > stats.totalPasses ? 'Liker' : 'Picker'}
-              </span>
-            </div>
-          </div>
-        )}
+          <dl className="stats-grid">
+            <div className="stat-card"><dt>Saved</dt><dd>{stats.liked}</dd></div>
+            <div className="stat-card"><dt>Passed</dt><dd>{stats.passed}</dd></div>
+            <div className="stat-card"><dt>Save rate</dt><dd>{likeRate}%</dd></div>
+          </dl>
+        </section>
       </div>
-    </div>
+    </section>
   )
 }
 
 export default Profile
-
